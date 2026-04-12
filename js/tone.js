@@ -38,9 +38,12 @@ function note_to_frequency(note) {
 }
 
 async function play() {
-  const note = document.getElementById("note").value;
-  const frequency = note_to_frequency(note);
-  await play_tone(frequency);
+  let notes = document.getElementById("note").value;
+  notes = notes.split(" ");
+  for (const note of notes) {
+    const frequency = note_to_frequency(note);
+    play_tone(frequency);
+  }
 }
 
 async function play_tone(frequency = 440) {
