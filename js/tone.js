@@ -1,4 +1,29 @@
 const A1 = 55;
+const note_names = [
+  "A",
+  "A#",
+  "B",
+  "C",
+  "C#",
+  "D",
+  "D#",
+  "E",
+  "F",
+  "F#",
+  "G",
+  "G#",
+];
+
+onload = () => {
+  for (let octave = 1; octave <= 4; octave++) {
+    for (let note of note_names) {
+      const id = note + octave;
+      document.getElementById("selection").innerHTML +=
+        `<input type="checkbox" id="${id}" value="${id}" /><label for="${id}">${id}</label> `;
+    }
+    document.getElementById("selection").innerHTML += "<br>";
+  }
+};
 
 function note_to_frequency(note) {
   var parsed = 0;
@@ -43,6 +68,18 @@ async function play() {
   for (const note of notes) {
     const frequency = note_to_frequency(note);
     play_tone(frequency);
+  }
+}
+
+async function play_select() {
+  for (let octave = 1; octave <= 4; octave++) {
+    for (let note of note_names) {
+      const id = note + octave;
+      if (document.getElementById(id).checked) {
+        const frequency = note_to_frequency(id);
+        play_tone(frequency);
+      }
+    }
   }
 }
 
