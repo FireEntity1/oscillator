@@ -86,11 +86,32 @@ async function play_select() {
 async function play_tone(frequency = 440) {
   const context = new AudioContext();
   const oscillator = context.createOscillator();
+  const waveform = document.getElementById("waveform").value;
+  const detuneValue = parseFloat(document.getElementById("detune").value);
+  var detunedOsc = [];
+
+  if (detuneValue > 0) {
+    const detuneOsc = context.createOscillator();
+    detuneOsc.type = waveform;
+    detuneOsc.frequency.value = frequency;
+    detuneOsc.detune.value = detuneValue;
+    detuneOsc.connect(context.destination);
+    detuneOsc.start();
+    detunedOsc.push(detuneOsc);
+  }
+
+  oscillator.type = waveform;
   oscillator.frequency.value = frequency;
   oscillator.connect(context.destination);
   await context.resume();
   oscillator.start();
   await new Promise((resolve) => setTimeout(resolve, 1000));
+
+  if (detunedOsc.length > 0) {
+    for (const osc of detunedOsc) {
+      osc.stop();
+    }
+  }
   oscillator.stop();
   context.close();
 }

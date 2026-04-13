@@ -5,6 +5,13 @@
     </head>
     <body>
         <h1>oscillator</h1>
+        <select id="waveform">
+            <option value="sine">Sine</option>
+            <option value="sawtooth">Sawtooth</option>
+            <option value="square">Square</option>
+            <option value="triangle">Triangle</option>
+        </select>
+        <input type="range" id="detune" min="0" max="50" value="0" />
         <input id="note" type="text" value="A4" />
         <button onclick="play()">Play Notes</button>
         <script src="js/tone.js"></script>
