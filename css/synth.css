@@ -43,3 +43,30 @@ h1 {
     width: 4em;
     height: 18px;
 }
+
+input[type="radio"] {
+    width: 2em;
+    height: 2em;
+}
+
+.melody-sequencer {
+    display: grid;
+    grid-template-rows: repeat(12, 48px);
+    grid-template-columns: repeat(var(--melody-column-count), 48px);
+    gap: 0.5em;
+    margin: 1em auto;
+}
+
+.melody-sequencer .cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f7f7f7;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 0.2em;
+}
+
+.melodybox {
+    margin: 0;
+}

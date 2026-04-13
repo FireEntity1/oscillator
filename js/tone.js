@@ -55,6 +55,31 @@ window.addEventListener("DOMContentLoaded", () => {
       sequencer.appendChild(cell);
     }
   }
+  const melody_sequencer = document.querySelector(".melody-sequencer");
+  const melodyRowCount = 12;
+  const melodyColumnCount = 8;
+
+  if (melody_sequencer) {
+    melody_sequencer.style.setProperty(
+      "--melody-column-count",
+      melodyColumnCount.toString(),
+    );
+  }
+
+  for (let i = 0; i < melodyRowCount; i++) {
+    for (let j = 0; j < melodyColumnCount; j++) {
+      const cell = document.createElement("div");
+      cell.classList.add("cell");
+      const melodybox = document.createElement("input");
+      melodybox.type = "radio";
+      melodybox.name = `melody-col-${j}`; // beat
+      melodybox.classList.add("melodybox");
+      melodybox.id = `melody-cell-${i}-${j}`;
+      melodybox.value = `${i}`; // note
+      cell.appendChild(melodybox);
+      melody_sequencer.appendChild(cell);
+    }
+  }
 });
 
 function note_to_frequency(note) {
@@ -196,7 +221,42 @@ async function play_sequence() {
   }
 }
 
-async function play_tone(frequency = 440, volume = -20) {
+async function play_melody() {
+  const melody_sequencer = document.querySelector(".melody-sequencer");
+  if (!melody_sequencer) return;
+  const melodyRowCount = 12;
+  const melodyColumnCount =
+    parseInt(
+      melody_sequencer.style.getPropertyValue("--melody-column-count"),
+      10,
+    ) || 8;
+
+  const beatDuration = 1000;
+
+  for (let j = 0; j < melodyColumnCount; j++) {
+    const checkedBox = melody_sequencer.querySelector(
+      `input[name="melody-col-${j}"]:checked`,
+    );
+
+    if (checkedBox) {
+      const noteIndex = parseInt(melodyRowCount - 1 - checkedBox.value, 10);
+      const noteName = note_names[noteIndex];
+      const octave = 4;
+      const noteToPlay = noteName + octave;
+
+      await play_tone(note_to_frequency(noteToPlay), beatDuration);
+    } else {
+      await new Promise((resolve) => setTimeout(resolve, beatDuration));
+    }
+  }
+}
+
+async function play_all() {
+  play_melody();
+  play_sequence();
+}
+
+async function play_tone(frequency = 440, duration = 1000) {
   var rawVolume = parseFloat(document.getElementById("volume").value);
   const context = audioCtx;
   const oscillator = context.createOscillator();
@@ -248,7 +308,8 @@ async function play_tone(frequency = 440, volume = -20) {
   oscillator.frequency.value = frequency;
   await context.resume();
   oscillator.start();
-  await new Promise((resolve) => setTimeout(resolve, 1000));
+  // Use the passed duration instead of fixed 1000ms
+  await new Promise((resolve) => setTimeout(resolve, duration)); // Use duration
   if (detunedOsc.length > 0) {
     for (const osc of detunedOsc) {
       osc.stop();
