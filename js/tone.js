@@ -67,9 +67,15 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 
   for (let i = 0; i < melodyRowCount; i++) {
+    const labelCell = document.createElement("div");
+    labelCell.classList.add("cell", "melody-label");
+    labelCell.textContent = note_names[melodyRowCount - 1 - i];
+    melody_sequencer.appendChild(labelCell);
+
     for (let j = 0; j < melodyColumnCount; j++) {
       const cell = document.createElement("div");
-      cell.classList.add("cell");
+      cell.classList.add("cell", "melody-cell");
+      if (j % 4 === 3) cell.classList.add("melody-divider");
       const melodybox = document.createElement("input");
       melodybox.type = "radio";
       melodybox.name = `melody-col-${j}`; // beat
@@ -239,6 +245,7 @@ async function play_melody() {
     );
 
     if (checkedBox) {
+      checkedBox.style.backgroundColor = "#f7f7f7";
       const noteIndex = parseInt(melodyRowCount - 1 - checkedBox.value, 10);
       const noteName = note_names[noteIndex];
       const octave = 4;
