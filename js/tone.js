@@ -57,7 +57,7 @@ window.addEventListener("DOMContentLoaded", () => {
   }
   const melody_sequencer = document.querySelector(".melody-sequencer");
   const melodyRowCount = 12;
-  const melodyColumnCount = 8;
+  const melodyColumnCount = 32;
 
   if (melody_sequencer) {
     melody_sequencer.style.setProperty(
@@ -231,7 +231,7 @@ async function play_melody() {
       10,
     ) || 8;
 
-  const beatDuration = 1000;
+  const beatDuration = 250;
 
   for (let j = 0; j < melodyColumnCount; j++) {
     const checkedBox = melody_sequencer.querySelector(
@@ -308,8 +308,7 @@ async function play_tone(frequency = 440, duration = 1000) {
   oscillator.frequency.value = frequency;
   await context.resume();
   oscillator.start();
-  // Use the passed duration instead of fixed 1000ms
-  await new Promise((resolve) => setTimeout(resolve, duration)); // Use duration
+  await new Promise((resolve) => setTimeout(resolve, duration));
   if (detunedOsc.length > 0) {
     for (const osc of detunedOsc) {
       osc.stop();
