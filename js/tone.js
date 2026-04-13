@@ -1,4 +1,5 @@
 const A1 = 55;
+
 const note_names = [
   "A",
   "A#",
@@ -14,7 +15,7 @@ const note_names = [
   "G#",
 ];
 
-onload = () => {
+window.addEventListener("DOMContentLoaded", () => {
   for (let octave = 1; octave <= 4; octave++) {
     for (let note of note_names) {
       const id = note + octave;
@@ -23,7 +24,20 @@ onload = () => {
     }
     document.getElementById("selection").innerHTML += "<br>";
   }
-};
+  const sequencer = document.querySelector(".chord-sequencer");
+  for (let i = 0; i < 4; i++) {
+    for (let j = 0; j < 4; j++) {
+      const cell = document.createElement("div");
+      cell.classList.add("cell");
+      const chordbox = document.createElement("input");
+      chordbox.type = "input";
+      chordbox.classList.add("chordbox");
+      chordbox.id = `cell-${i}-${j}`;
+      cell.appendChild(chordbox);
+      sequencer.appendChild(cell);
+    }
+  }
+});
 
 function note_to_frequency(note) {
   var parsed = 0;
@@ -59,13 +73,68 @@ function note_to_frequency(note) {
   } else {
     parsed += (note[1] - 1) * 12;
   }
-  return 55 * Math.pow(2, parsed / 12);
+  return A1 * Math.pow(2, parsed / 12);
+}
+
+function parse_chord_name(chord) {
+  if (!chord) return [];
+  chord = chord.trim();
+  var root = chord[0].toUpperCase();
+  var offset = 1;
+  if (chord[1] == "#" || chord[1] == "b") {
+    root += chord[1];
+    offset = 2;
+  }
+  var modifier = chord.slice(offset);
+
+  var intervals = [0, 4, 7];
+  if (modifier.startsWith("m9")) intervals = [0, 3, 7, 10, 14];
+  else if (modifier.startsWith("m7")) intervals = [0, 3, 7, 10];
+  else if (modifier.startsWith("m")) intervals = [0, 3, 7];
+  else if (modifier.startsWith("dim7")) intervals = [0, 3, 6, 9];
+  else if (modifier.startsWith("dim")) intervals = [0, 3, 6];
+  else if (modifier.startsWith("maj9")) intervals = [0, 4, 7, 11, 14];
+  else if (modifier.startsWith("maj7")) intervals = [0, 4, 7, 11];
+  else if (modifier.startsWith("9")) intervals = [0, 4, 7, 10, 14];
+  else if (modifier.startsWith("7")) intervals = [0, 4, 7, 10];
+  else if (modifier.startsWith("6")) intervals = [0, 4, 9];
+  else if (modifier.startsWith("5")) intervals = [0, 7];
+  else if (modifier.startsWith("sus4")) intervals = [0, 5, 7];
+  else if (modifier.startsWith("sus2")) intervals = [0, 2, 7];
+
+  var root_index = note_names.indexOf(root);
+  var notes = [];
+  for (var i = 0; i < intervals.length; i++) {
+    var semitoneindex = root_index + intervals[i];
+    var wrappedindex = semitoneindex % 12;
+    var oct = 4 + Math.floor(semitoneindex / 12);
+    notes.push(note_names[wrappedindex] + oct);
+  }
+
+  if (chord.includes("/")) {
+    var parts = chord.split("/");
+    var bass = parts[1].trim();
+    var bassNote = bass;
+    if (bass.length == 1) bassNote = bass + "3";
+    notes[0] = bassNote;
+  }
+
+  return notes;
 }
 
 async function play() {
   let notes = document.getElementById("note").value;
   notes = notes.split(" ");
   for (const note of notes) {
+    const frequency = note_to_frequency(note);
+    play_tone(frequency);
+  }
+}
+
+async function play_chord() {
+  let chord = document.getElementById("chord").value;
+  const parsed = parse_chord_name(chord);
+  for (const note of parsed) {
     const frequency = note_to_frequency(note);
     play_tone(frequency);
   }
@@ -106,7 +175,6 @@ async function play_tone(frequency = 440) {
   await context.resume();
   oscillator.start();
   await new Promise((resolve) => setTimeout(resolve, 1000));
-
   if (detunedOsc.length > 0) {
     for (const osc of detunedOsc) {
       osc.stop();

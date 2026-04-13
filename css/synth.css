@@ -1,0 +1,41 @@
+html,
+body {
+    height: 90%;
+    margin: 0;
+}
+body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    text-align: center;
+}
+
+.control {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    margin: 2em;
+}
+
+.chord-sequencer {
+    display: grid;
+    grid-template-columns: repeat(4, 48px);
+    grid-auto-rows: 48px;
+    gap: 2em;
+    margin: 1em;
+}
+.chord-sequencer .cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f7f7f7;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.chordbox {
+    width: 4em;
+    height: 18px;
+}
