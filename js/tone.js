@@ -1,5 +1,15 @@
 const A1 = 55;
 
+const flatToSharp = {
+  Bb: "A#",
+  Db: "C#",
+  Eb: "D#",
+  Gb: "F#",
+  Ab: "G#",
+  Cb: "B",
+  Fb: "E",
+};
+
 const note_names = [
   "A",
   "A#",
@@ -14,6 +24,12 @@ const note_names = [
   "G",
   "G#",
 ];
+
+var wrap = true;
+
+document.getElementById("wrap").addEventListener("change", (event) => {
+  wrap = event.target.checked;
+});
 
 window.addEventListener("DOMContentLoaded", () => {
   for (let octave = 1; octave <= 4; octave++) {
@@ -89,12 +105,12 @@ function parse_chord_name(chord) {
 
   var intervals = [0, 4, 7];
   if (modifier.startsWith("m9")) intervals = [0, 3, 7, 10, 14];
+  else if (modifier.startsWith("maj7")) intervals = [0, 4, 7, 11];
+  else if (modifier.startsWith("maj9")) intervals = [0, 4, 7, 11, 14];
   else if (modifier.startsWith("m7")) intervals = [0, 3, 7, 10];
   else if (modifier.startsWith("m")) intervals = [0, 3, 7];
   else if (modifier.startsWith("dim7")) intervals = [0, 3, 6, 9];
   else if (modifier.startsWith("dim")) intervals = [0, 3, 6];
-  else if (modifier.startsWith("maj9")) intervals = [0, 4, 7, 11, 14];
-  else if (modifier.startsWith("maj7")) intervals = [0, 4, 7, 11];
   else if (modifier.startsWith("9")) intervals = [0, 4, 7, 10, 14];
   else if (modifier.startsWith("7")) intervals = [0, 4, 7, 10];
   else if (modifier.startsWith("6")) intervals = [0, 4, 9];
@@ -107,7 +123,11 @@ function parse_chord_name(chord) {
   for (var i = 0; i < intervals.length; i++) {
     var semitoneindex = root_index + intervals[i];
     var wrappedindex = semitoneindex % 12;
-    var oct = 4 + Math.floor(semitoneindex / 12);
+    if (!wrap) {
+      var oct = 3 + Math.floor(semitoneindex / 12);
+    } else {
+      var oct = 3;
+    }
     notes.push(note_names[wrappedindex] + oct);
   }
 
@@ -118,7 +138,7 @@ function parse_chord_name(chord) {
     if (bass.length == 1) bassNote = bass + "3";
     notes[0] = bassNote;
   }
-
+  console.log(notes);
   return notes;
 }
 

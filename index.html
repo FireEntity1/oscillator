@@ -21,13 +21,16 @@
             <label for="voices">Voices</label>
         </div>
         <div class="control">
-            <input type="range" id="volume" min="-120" max="0" value="-40" />
+            <input type="range" id="volume" min="-120" max="0" value="-60" />
             <label for="volume">Volume</label>
         </div>
         <input id="note" type="text" value="" placeholder="e.g. C4, A5, G3" />
         <button onclick="play()">Play Notes</button>
 
         <input id="chord" type="text" placeholder="e.g. C, Am, G5" />
+        <div>
+            <input type="checkbox" id="wrap" /><label for="wrap">Wrap</label>
+        </div>
         <button onclick="play_chord()">Play Chord</button>
         <div id="selection"></div>
         <button onclick="play_select()">Play Selection</button>
