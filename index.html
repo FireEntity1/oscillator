@@ -17,6 +17,12 @@
         <div class="control">
             <input type="range" id="detune" min="0" max="50" value="0" />
             <label for="detune">Detune</label>
+            <input type="range" id="voices" min="1" max="8" value="1" />
+            <label for="voices">Voices</label>
+        </div>
+        <div class="control">
+            <input type="range" id="volume" min="-120" max="0" value="-40" />
+            <label for="volume">Volume</label>
         </div>
         <input id="note" type="text" value="" placeholder="e.g. C4, A5, G3" />
         <button onclick="play()">Play Notes</button>

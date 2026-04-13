@@ -152,26 +152,56 @@ async function play_select() {
   }
 }
 
-async function play_tone(frequency = 440) {
+async function play_tone(frequency = 440, volume = -20) {
+  var rawVolume = parseFloat(document.getElementById("volume").value);
   const context = new AudioContext();
   const oscillator = context.createOscillator();
+  const gain = context.createGain();
+  function dbToGain(db) {
+    if (db === -Infinity) return 0;
+    if (db <= -120) return 0;
+    return Math.pow(10, db / 20);
+  }
+  function sliderRawToDb(raw, el) {
+    const min = parseFloat(el.min) || -120;
+    const max = parseFloat(el.max) || 0;
+    let t = (raw - min) / (max - min);
+    t = Math.max(0, Math.min(1, t));
+    const alpha = 0.1;
+    const shaped = Math.pow(t, alpha);
+    return min + (max - min) * shaped;
+  }
+  const now = context.currentTime;
+  const volumeDb = sliderRawToDb(rawVolume, document.getElementById("volume"));
+  gain.gain.setValueAtTime(dbToGain(volumeDb), now);
+  const volume_slider = document.getElementById("volume");
+  function onVolInput() {
+    const v = parseFloat(volume_slider.value);
+    const db = sliderRawToDb(v, volume_slider);
+    gain.gain.cancelScheduledValues(context.currentTime);
+    gain.gain.setTargetAtTime(dbToGain(db), context.currentTime, 0.02);
+  }
+  volume_slider.addEventListener("input", onVolInput);
+  oscillator.connect(gain);
+  gain.connect(context.destination);
   const waveform = document.getElementById("waveform").value;
   const detuneValue = parseFloat(document.getElementById("detune").value);
   var detunedOsc = [];
 
   if (detuneValue > 0) {
-    const detuneOsc = context.createOscillator();
-    detuneOsc.type = waveform;
-    detuneOsc.frequency.value = frequency;
-    detuneOsc.detune.value = detuneValue;
-    detuneOsc.connect(context.destination);
-    detuneOsc.start();
-    detunedOsc.push(detuneOsc);
+    for (let i = 0; i < document.getElementById("voices").value; i++) {
+      const detuneOsc = context.createOscillator();
+      detuneOsc.type = waveform;
+      detuneOsc.frequency.value = frequency;
+      detuneOsc.detune.value = detuneValue;
+      detuneOsc.connect(gain);
+      detuneOsc.start();
+      detunedOsc.push(detuneOsc);
+    }
   }
 
   oscillator.type = waveform;
   oscillator.frequency.value = frequency;
-  oscillator.connect(context.destination);
   await context.resume();
   oscillator.start();
   await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -181,5 +211,6 @@ async function play_tone(frequency = 440) {
     }
   }
   oscillator.stop();
+  volume_slider.removeEventListener("input", onVolInput);
   context.close();
 }

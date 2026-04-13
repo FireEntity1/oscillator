@@ -1,6 +1,5 @@
 html,
 body {
-    height: 90%;
     margin: 0;
 }
 body {
@@ -9,6 +8,11 @@ body {
     justify-content: center;
     flex-direction: column;
     text-align: center;
+}
+
+h1 {
+    font-size: 5em;
+    margin: 0;
 }
 
 .control {
