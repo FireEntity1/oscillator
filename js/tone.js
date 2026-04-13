@@ -27,6 +27,8 @@ const note_names = [
 
 var wrap = true;
 
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
 document.getElementById("wrap").addEventListener("change", (event) => {
   wrap = event.target.checked;
 });
@@ -46,7 +48,7 @@ window.addEventListener("DOMContentLoaded", () => {
       const cell = document.createElement("div");
       cell.classList.add("cell");
       const chordbox = document.createElement("input");
-      chordbox.type = "input";
+      chordbox.type = "text";
       chordbox.classList.add("chordbox");
       chordbox.id = `cell-${i}-${j}`;
       cell.appendChild(chordbox);
@@ -117,7 +119,9 @@ function parse_chord_name(chord) {
   else if (modifier.startsWith("5")) intervals = [0, 7];
   else if (modifier.startsWith("sus4")) intervals = [0, 5, 7];
   else if (modifier.startsWith("sus2")) intervals = [0, 2, 7];
-
+  if (root[1] == "b") {
+    var root = flatToSharp[root];
+  }
   var root_index = note_names.indexOf(root);
   var notes = [];
   for (var i = 0; i < intervals.length; i++) {
@@ -151,13 +155,17 @@ async function play() {
   }
 }
 
-async function play_chord() {
-  let chord = document.getElementById("chord").value;
+async function play_chord(to_play = null) {
+  let chord;
+  if (typeof to_play === "string" && to_play.length > 0) chord = to_play;
+  else chord = document.getElementById("chord").value;
   const parsed = parse_chord_name(chord);
-  for (const note of parsed) {
+  if (!parsed || parsed.length === 0) return;
+  const promises = parsed.map((note) => {
     const frequency = note_to_frequency(note);
-    play_tone(frequency);
-  }
+    return play_tone(frequency);
+  });
+  await Promise.all(promises);
 }
 
 async function play_select() {
@@ -172,9 +180,25 @@ async function play_select() {
   }
 }
 
+async function play_sequence() {
+  const sequence = [];
+  const seqEl = document.getElementById("chord-sequencer");
+  const chordBoxes = seqEl ? seqEl.querySelectorAll(".chordbox") : [];
+  console.log("play_sequence: found", chordBoxes.length, "boxes");
+  chordBoxes.forEach((el, i) =>
+    console.log("box", i, el.tagName, "value=", el.value),
+  );
+  for (const input of chordBoxes) sequence.push(input.value);
+  for (const chord of sequence) {
+    console.log("sequence chord ->", chord);
+    if (chord && chord.trim().length > 0) await play_chord(chord.trim());
+    else await new Promise((resolve) => setTimeout(resolve, 1000));
+  }
+}
+
 async function play_tone(frequency = 440, volume = -20) {
   var rawVolume = parseFloat(document.getElementById("volume").value);
-  const context = new AudioContext();
+  const context = audioCtx;
   const oscillator = context.createOscillator();
   const gain = context.createGain();
   function dbToGain(db) {
@@ -228,9 +252,17 @@ async function play_tone(frequency = 440, volume = -20) {
   if (detunedOsc.length > 0) {
     for (const osc of detunedOsc) {
       osc.stop();
+      try {
+        osc.disconnect();
+      } catch (e) {}
     }
   }
   oscillator.stop();
+  try {
+    oscillator.disconnect();
+  } catch (e) {}
+  try {
+    gain.disconnect();
+  } catch (e) {}
   volume_slider.removeEventListener("input", onVolInput);
-  context.close();
 }
