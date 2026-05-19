@@ -36,14 +36,14 @@ document.getElementById("wrap").addEventListener("change", (event) => {
 });
 
 window.addEventListener("DOMContentLoaded", () => {
-  for (let octave = 1; octave <= 4; octave++) {
-    for (let note of note_names) {
-      const id = note + octave;
-      document.getElementById("selection").innerHTML +=
-        `<input type="checkbox" id="${id}" value="${id}" /><label for="${id}">${id}</label> `;
-    }
-    document.getElementById("selection").innerHTML += "<br>";
-  }
+  // for (let octave = 1; octave <= 4; octave++) {
+  //   for (let note of note_names) {
+  //     const id = note + octave;
+  //     document.getElementById("selection").innerHTML +=
+  //       `<input type="checkbox" id="${id}" value="${id}" /><label for="${id}">${id}</label> `;
+  //   }
+  //   document.getElementById("selection").innerHTML += "<br>";
+  // }
   // const sequencer = document.querySelector(".chord-sequencer");
   // for (let i = 0; i < 4; i++) {
   //   for (let j = 0; j < 4; j++) {

@@ -80,6 +80,29 @@ input[type="radio"] {
     border-bottom: 2px solid #333;
 }
 
+.layout-container {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    flex-direction: row;
+}
+
+.left-panel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    min-width:10em;
+}
+
+.right-panel {
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+}
+
 .chordbox {
     width: 80%;
     height: 18px;
