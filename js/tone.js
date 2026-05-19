@@ -84,6 +84,16 @@ window.addEventListener("DOMContentLoaded", () => {
       melodybox.value = `${i}`; // ts note
       cell.appendChild(melodybox);
       melody_sequencer.appendChild(cell);
+      melodybox.addEventListener("click", () => {
+        if (melodybox.wasChecked) {
+          melodybox.checked = false
+          melodybox.wasChecked = false;
+        }
+          else {
+            melodybox.checked = true;
+          melodybox.wasChecked = true;
+        }
+      });
     }
   }
 });
