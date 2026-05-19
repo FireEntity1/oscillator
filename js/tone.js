@@ -75,6 +75,10 @@ window.addEventListener("DOMContentLoaded", () => {
     for (let j = 0; j < melodyColumnCount; j++) {
       const cell = document.createElement("div");
       cell.classList.add("cell", "melody-cell");
+
+      if (!note_names[melodyRowCount - 1 - i].includes("#") && !note_names[melodyRowCount - 1 - i].includes("b"))
+        cell.classList.add("natural-row");
+
       if (j % 4 === 3) cell.classList.add("melody-divider");
       const melodybox = document.createElement("input");
       melodybox.type = "radio";
