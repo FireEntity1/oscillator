@@ -51,13 +51,14 @@ input[type="radio"] {
 
 .melody-sequencer {
     display: grid;
-    grid-template-rows: repeat(12, 32px);
+    /* grid-template-rows: repeat(12, 32px); */
     grid-template-columns: 60px repeat(var(--melody-column-count), 32px);
     gap: 0;
     margin: 1em auto;
+    max-height: calc(32px * 12 + 4px);
     max-width: 60vw;
     overflow-x: auto;
-    overflow-y: hidden;
+    overflow-y: auto;
     box-sizing: border-box;
     border: 2px solid #ccc;
 }

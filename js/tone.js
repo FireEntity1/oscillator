@@ -56,7 +56,7 @@ window.addEventListener("DOMContentLoaded", () => {
     }
   }
   const melody_sequencer = document.querySelector(".melody-sequencer");
-  const melodyRowCount = 12;
+  const melodyRowCount = 24;
   const melodyColumnCount = 32;
 
   if (melody_sequencer) {
@@ -67,18 +67,21 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 
   for (let i = 0; i < melodyRowCount; i++) {
+    const absoluteIndex = melodyRowCount - 1 - i;
+    const noteString = note_names[absoluteIndex%12];
+    const octave = 4 + Math.floor(absoluteIndex / 12);
     const labelCell = document.createElement("div");
     labelCell.classList.add("cell", "melody-label");
-    labelCell.textContent = note_names[melodyRowCount - 1 - i];
+    labelCell.textContent = noteString + octave;
     melody_sequencer.appendChild(labelCell);
 
     for (let j = 0; j < melodyColumnCount; j++) {
       const cell = document.createElement("div");
       cell.classList.add("cell", "melody-cell");
 
-      if (!note_names[melodyRowCount - 1 - i].includes("#") && !note_names[melodyRowCount - 1 - i].includes("b"))
+      if (!noteString.includes("#") && !noteString.includes("b")) {
         cell.classList.add("natural-row");
-
+      }
       if (j % 4 === 3) cell.classList.add("melody-divider");
       const melodybox = document.createElement("input");
       melodybox.type = "radio";
@@ -260,10 +263,10 @@ async function play_melody() {
 
     if (checkedBox) {
       // checkedBox.style.backgroundColor = "#f7f7f7";
-      const noteIndex = parseInt(melodyRowCount - 1 - checkedBox.value, 10);
-      const noteName = note_names[noteIndex];
-      const octave = 4;
-      const noteToPlay = noteName + octave;
+      const absoluteIndex = parseInt(melodyRowCount - 1 - checkedBox.value, 10);
+      const noteString = note_names[absoluteIndex%12];
+      const octave = 4 + Math.floor(absoluteIndex / 12);
+      const noteToPlay = noteString + octave;
 
       await play_tone(note_to_frequency(noteToPlay), beatDuration);
     } else {
