@@ -25,6 +25,8 @@ const note_names = [
   "G#",
 ];
 
+const melodyRowCount = 24;
+
 var wrap = true;
 
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -42,21 +44,21 @@ window.addEventListener("DOMContentLoaded", () => {
     }
     document.getElementById("selection").innerHTML += "<br>";
   }
-  const sequencer = document.querySelector(".chord-sequencer");
-  for (let i = 0; i < 4; i++) {
-    for (let j = 0; j < 4; j++) {
-      const cell = document.createElement("div");
-      cell.classList.add("cell");
-      const chordbox = document.createElement("input");
-      chordbox.type = "text";
-      chordbox.classList.add("chordbox");
-      chordbox.id = `cell-${i}-${j}`;
-      cell.appendChild(chordbox);
-      sequencer.appendChild(cell);
-    }
-  }
+  // const sequencer = document.querySelector(".chord-sequencer");
+  // for (let i = 0; i < 4; i++) {
+  //   for (let j = 0; j < 4; j++) {
+  //     const cell = document.createElement("div");
+  //     cell.classList.add("cell");
+  //     const chordbox = document.createElement("input");
+  //     chordbox.type = "text";
+  //     chordbox.classList.add("chordbox");
+  //     chordbox.id = `cell-${i}-${j}`;
+  //     cell.appendChild(chordbox);
+  //     sequencer.appendChild(cell);
+  //   }
+  // }
+
   const melody_sequencer = document.querySelector(".melody-sequencer");
-  const melodyRowCount = 24;
   const melodyColumnCount = 32;
 
   if (melody_sequencer) {
@@ -64,6 +66,26 @@ window.addEventListener("DOMContentLoaded", () => {
       "--melody-column-count",
       melodyColumnCount.toString(),
     );
+  }
+
+  const cornerCell = document.createElement("div");
+  cornerCell.classList.add("cell", "melody-label");
+  cornerCell.style.position = 'sticky';
+  cornerCell.style.top = '0';
+  cornerCell.style.zIndex = '4';
+  cornerCell.textContent = "Chords";
+  melody_sequencer.appendChild(cornerCell);
+
+  const numberOfChords = melodyColumnCount/4;
+  for (let i = 0; i < numberOfChords; i++) {
+    const chordCell = document.createElement("div");
+    chordCell.classList.add("chord-cell");
+    const chordbox = document.createElement("input");
+    chordbox.type = "text";
+    chordbox.classList.add("chordbox");
+    chordbox.id = `chord-cell-${i}`;
+    chordCell.appendChild(chordbox);
+    melody_sequencer.appendChild(chordCell);
   }
 
   for (let i = 0; i < melodyRowCount; i++) {
@@ -230,7 +252,7 @@ async function play_select() {
 
 async function play_sequence() {
   const sequence = [];
-  const seqEl = document.getElementById("chord-sequencer");
+  const seqEl = document.querySelector(".melody-sequencer");
   const chordBoxes = seqEl ? seqEl.querySelectorAll(".chordbox") : [];
   console.log("play_sequence: found", chordBoxes.length, "boxes");
   chordBoxes.forEach((el, i) =>
@@ -247,7 +269,6 @@ async function play_sequence() {
 async function play_melody() {
   const melody_sequencer = document.querySelector(".melody-sequencer");
   if (!melody_sequencer) return;
-  const melodyRowCount = 12;
   const melodyColumnCount =
     parseInt(
       melody_sequencer.style.getPropertyValue("--melody-column-count"),
