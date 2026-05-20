@@ -1,3 +1,5 @@
+/* #e84855, #d6e5e3, #9fd8cb, #517664, #1a181b <----- I LOVE COOLORS.CO*/
+
 html,
 body {
     margin: 0;
@@ -65,9 +67,9 @@ input[type="radio"] {
     /* grid-template-rows: repeat(12, 32px); */
     grid-template-columns: 60px repeat(var(--melody-column-count), 32px);
     gap: 0;
-    margin: 1em auto;
-    max-height: calc(32px * 12 + 4px);
-    max-width: 80vw;
+    margin: 0;
+    max-height: 40em;
+    width: 100%;
     overflow-x: auto;
     overflow-y: auto;
     box-sizing: border-box;
@@ -106,13 +108,13 @@ input[type="radio"] {
     background-color: #1a181b;
     flex-direction: column;
     padding: 1em;
-    height: 100vh;
+    height: 90%;
     box-sizing: border-box;
 }
 
 .left-panel {
     background-color: #D6E5E3;
-    height:100vh;
+    height: 90%;
     display: flex;
     align-items: center;
     flex-direction: column;
@@ -137,7 +139,7 @@ input[type="radio"] {
 
 .right-panel {
     display: flex;
-    /* flex-grow: 1; */
+    flex-grow: 1;
     align-items: stretch;
     justify-content: flex-start;
     min-width:480px;

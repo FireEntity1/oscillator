@@ -24,20 +24,19 @@ const note_names = [
   "G",
   "G#",
 ];
-
 const base_controls = `<div class="control">
-            <input type="range" id="detune" min="0" max="50" value="0" />
-            <label for="detune">Detune</label>
-            <input type="range" id="voices" min="1" max="8" value="1" />
-            <label for="voices">Voices</label>
-            <div class="control">
-                    <select id="waveform">
-                        <option value="sine">Sine</option>
-                        <option value="sawtooth">Sawtooth</option>
-                        <option value="square">Square</option>
-                        <option value="triangle">Triangle</option>
-                    </select>
-                </div>`;
+<input type="range" id="detune" min="0" max="50" value="0" />
+<label for="detune">Detune</label>
+<input type="range" id="voices" min="1" max="8" value="1" />
+<label for="voices">Voices</label>
+<div class="control">
+<select id="waveform">
+<option value="sine">Sine</option>
+<option value="sawtooth">Sawtooth</option>
+<option value="square">Square</option>
+<option value="triangle">Triangle</option>
+</select>
+</div>`;
 
 var instruments = [
   {
@@ -48,7 +47,8 @@ var instruments = [
   }
 ]
 
-const melodyRowCount = 24;
+var melodyColumnCount = 64;
+const melodyRowCount = 49;
 
 let currentInstrument = "lead1";
 
@@ -94,7 +94,6 @@ window.addEventListener("DOMContentLoaded", () => {
   });
 
   const melody_sequencer = document.querySelector(".melody-sequencer");
-  const melodyColumnCount = 32;
 
   if (melody_sequencer) {
     melody_sequencer.style.setProperty(
@@ -126,7 +125,7 @@ window.addEventListener("DOMContentLoaded", () => {
   for (let i = 0; i < melodyRowCount; i++) {
     const absoluteIndex = melodyRowCount - 1 - i;
     const noteString = note_names[absoluteIndex%12];
-    const octave = 4 + Math.floor(absoluteIndex / 12);
+    const octave = 2 + Math.floor(absoluteIndex / 12);
     const labelCell = document.createElement("div");
     labelCell.classList.add("cell", "melody-label");
     labelCell.textContent = noteString + octave;
@@ -244,7 +243,7 @@ function parse_chord_name(chord) {
     var parts = chord.split("/");
     var bass = parts[1].trim();
     var bassNote = bass;
-    if (bass.length == 1) bassNote = bass + "3";
+    if (!/\d$/.test(bass)) bassNote = bass + "3";
     notes[0] = bassNote;
   }
   console.log(notes);
@@ -321,7 +320,7 @@ async function play_melody() {
       // checkedBox.style.backgroundColor = "#f7f7f7";
       const absoluteIndex = parseInt(melodyRowCount - 1 - checkedBox.value, 10);
       const noteString = note_names[absoluteIndex%12];
-      const octave = 4 + Math.floor(absoluteIndex / 12);
+      const octave = 2 + Math.floor(absoluteIndex / 12);
       const noteToPlay = noteString + octave;
 
       await play_tone(note_to_frequency(noteToPlay), beatDuration);
