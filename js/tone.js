@@ -25,7 +25,20 @@ const note_names = [
   "G#",
 ];
 
+const base_controls = '<input type="range" id="volume" min="-120" max="0" value="-60" /><label for="volume">Volume</label>';
+
+var instruments = [
+  {
+    "type": "sawtooth",
+    "detune": 15,
+    "voices": 1,
+    "volume": -40
+  }
+]
+
 const melodyRowCount = 24;
+
+let currentInstrument = "lead1";
 
 var wrap = true;
 
@@ -57,6 +70,16 @@ window.addEventListener("DOMContentLoaded", () => {
   //     sequencer.appendChild(cell);
   //   }
   // }
+
+  const tracks = document.querySelectorAll(".track");
+  tracks.forEach((track) => {
+    track.addEventListener("click", () => {
+      tracks.forEach((t) => t.classList.remove("active"));
+      track.classList.add("active");
+      currentInstrument = track.dataset.instrument;
+      console.log("Selected instrument:", currentInstrument);
+    });
+  });
 
   const melody_sequencer = document.querySelector(".melody-sequencer");
   const melodyColumnCount = 32;
@@ -301,8 +324,8 @@ async function play_all() {
   play_sequence();
 }
 
-async function play_tone(frequency = 440, duration = 1000) {
-  var rawVolume = parseFloat(document.getElementById("volume").value);
+async function play_tone(frequency = 440, duration = 1000, volume=document.getElementById("volume").value) {
+  var rawVolume = parseFloat(volume);
   const context = audioCtx;
   const oscillator = context.createOscillator();
   const gain = context.createGain();
@@ -370,4 +393,8 @@ async function play_tone(frequency = 440, duration = 1000) {
     gain.disconnect();
   } catch (e) {}
   volume_slider.removeEventListener("input", onVolInput);
+}
+
+function generate_instruments() {
+  return
 }

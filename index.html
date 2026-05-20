@@ -7,8 +7,18 @@
     <body>
         <h1>oscillator</h1>
         <div class="layout-container">
-            <div class="left-panel">
-                <div class="control">
+    <div class="left-edge-panel" id="left-panel">
+        <div class="track active" data-instrument="lead1">Lead Synth</div>
+        <div class="track" data-instrument="bass">Bass Synth</div>
+    </div>
+
+    <div class="left-panel">
+        <div class="control">
+            <input type="range" id="detune" min="0" max="50" value="0" />
+            <label for="detune">Detune</label>
+            <input type="range" id="voices" min="1" max="8" value="1" />
+            <label for="voices">Voices</label>
+            <div class="control">
                     <select id="waveform">
                         <option value="sine">Sine</option>
                         <option value="sawtooth">Sawtooth</option>
@@ -16,26 +26,24 @@
                         <option value="triangle">Triangle</option>
                     </select>
                 </div>
-                <div class="control">
-                    <input type="range" id="detune" min="0" max="50" value="0" />
-                    <label for="detune">Detune</label>
-                    <input type="range" id="voices" min="1" max="8" value="1" />
-                    <label for="voices">Voices</label>
-                </div>
-                <div class="control">
-                    <input type="range" id="volume" min="-120" max="0" value="-60" />
-                    <label for="volume">Volume</label>
-                </div>
-
-                <div>
-                    <input type="checkbox" id="wrap" /><label for="wrap">Wrap</label>
-                </div>
-            </div>
-        <div class="right-panel">
-            <div id="melody-sequencer" class="melody-sequencer"></div>
-            <button onclick="play_all()" class="control">PLAY</button>
-            </div>
         </div>
+
+        <div class="control">
+            <input type="range" id="volume" min="-120" max="0" value="-60" />
+            <label for="volume">Volume</label>
+        </div>
+
+        <div>
+            <input type="checkbox" id="wrap" />
+            <label for="wrap">Wrap</label>
+        </div>
+    </div>
+
+    <div class="right-panel">
+        <div id="melody-sequencer" class="melody-sequencer"></div>
+        <button onclick="play_all()" class="control">PLAY</button>
+    </div>
+</div>
     </body>
     <script src="js/tone.js"></script>
 </html>
