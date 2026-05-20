@@ -25,7 +25,19 @@ const note_names = [
   "G#",
 ];
 
-const base_controls = '<input type="range" id="volume" min="-120" max="0" value="-60" /><label for="volume">Volume</label>';
+const base_controls = `<div class="control">
+            <input type="range" id="detune" min="0" max="50" value="0" />
+            <label for="detune">Detune</label>
+            <input type="range" id="voices" min="1" max="8" value="1" />
+            <label for="voices">Voices</label>
+            <div class="control">
+                    <select id="waveform">
+                        <option value="sine">Sine</option>
+                        <option value="sawtooth">Sawtooth</option>
+                        <option value="square">Square</option>
+                        <option value="triangle">Triangle</option>
+                    </select>
+                </div>`;
 
 var instruments = [
   {

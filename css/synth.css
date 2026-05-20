@@ -2,6 +2,9 @@ html,
 body {
     margin: 0;
     height: 100%;
+    font-family: "Geo", sans-serif;
+    font-weight: 400;
+    font-style: normal;
 }
 body {
     display: flex;
@@ -64,7 +67,7 @@ input[type="radio"] {
     gap: 0;
     margin: 1em auto;
     max-height: calc(32px * 12 + 4px);
-    max-width: 60vw;
+    max-width: 80vw;
     overflow-x: auto;
     overflow-y: auto;
     box-sizing: border-box;
@@ -100,7 +103,7 @@ input[type="radio"] {
     align-items:flex-start;
     justify-content: flex-start;
     width: 200px;
-    background-color: #2c2c2c;
+    background-color: #1a181b;
     flex-direction: column;
     padding: 1em;
     height: 100vh;
@@ -108,11 +111,10 @@ input[type="radio"] {
 }
 
 .left-panel {
-    background-color: #f7f7f7;
+    background-color: #D6E5E3;
     height:100vh;
     display: flex;
     align-items: center;
-    justify-content: center;
     flex-direction: column;
     min-width:10em;
 }
@@ -128,9 +130,9 @@ input[type="radio"] {
 }
 
 .track.active {
-    background: #4caf50;
+    background: #517664;
     color: white;
-    border-color: #4caf50;
+    border-color: #517664;
 }
 
 .right-panel {
@@ -171,8 +173,12 @@ input[type="radio"].melodybox {
     outline: none;
 }
 
+input[type='range'] {
+    accent-color:#517664;
+}
+
 input[type="radio"].melodybox:checked {
-    background: #4caf50;
+    background: #E84855;
 }
 
 .melody-sequencer .natural-row {
@@ -186,9 +192,9 @@ input[type="radio"].melodybox:checked {
 .melody-sequencer .melody-label {
     position: sticky;
     left: 0;
+    font-size: 1.3em;
     z-index: 2;
     background: #f7f7f7;
-    font-weight: 600;
 }
 
 .melody-sequencer .melody-divider {
@@ -201,5 +207,16 @@ select {
     border: 1px solid #ccc;
     border-radius: 0;
     background: white;
+    cursor: pointer;
+}
+
+.play {
+    margin: 1em auto;
+    padding: 0.5em 2em;
+    font-size: 1.2em;
+    border: none;
+    border-radius: 4px;
+    background-color: #517664;
+    color: white;
     cursor: pointer;
 }
