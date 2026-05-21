@@ -319,11 +319,11 @@ async function play_sequence() {
   for (const chord of sequence) {
     console.log("sequence chord ->", chord);
     if (chord && chord.trim().length > 0) await play_chord(chord.trim());
-    else await new Promise((resolve) => setTimeout(resolve, 1000));
+    else await new Promise((resolve) => setTimeout(resolve, 60000/bpm));
   }
 }
 
-async function play_melody() {
+async function play_melody(notes = null) {
   const melody_sequencer = document.querySelector(".melody-sequencer");
   if (!melody_sequencer) return;
   const melodyColumnCount =
@@ -332,8 +332,20 @@ async function play_melody() {
       10,
     ) || 8;
 
-  const beatDuration = 250;
+  const beatDuration = 60000 / bpm;
 
+  if (notes && notes.length > 0) {
+    for (let j = 0; j < melodyColumnCount; j++) {
+      const note = notes[j];
+      if (note) {
+        const frequency = note_to_frequency(note);
+        await play_tone(frequency, beatDuration);
+      } else {
+        await new Promise((resolve) => setTimeout(resolve, beatDuration));
+      }
+    }
+    return;
+  }
   for (let j = 0; j < melodyColumnCount; j++) {
     const checkedBox = melody_sequencer.querySelector(
       `input[name="melody-col-${j}"]:checked`,
@@ -354,8 +366,21 @@ async function play_melody() {
 }
 
 async function play_all() {
-  play_melody();
-  play_sequence();
+  tracks[currentInstrument].notes = get_melody_notes();
+  var melodies = [];
+  Object.values(tracks).forEach((track) => {
+    if (track.notes && track.notes.length > 0) {
+      melodies.push(track.notes);
+    }
+  });
+  if (melodies.length > 0) {
+    for (const melody of melodies) {
+      play_melody(melody);
+      play_sequence();
+    }
+  } else {
+    play_sequence();
+  }
 }
 
 async function play_tone(frequency = 440, duration = 1000, volume=document.getElementById("volume").value) {
