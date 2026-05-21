@@ -222,3 +222,22 @@ select {
     color: white;
     cursor: pointer;
 }
+
+#bpm {
+    margin: 1em auto;
+    margin-top: 0;
+    padding: 0.5em 1em;
+    font-size: 1.2em;
+    border: none;
+    border-radius: 4px;
+    background-color: #517664;
+    color: white;
+    cursor: pointer;
+}
+
+#bpm-label {
+    margin: 1em auto;
+    margin-bottom: 0;
+    font-size: 1.2em;
+    color: #517664;
+}

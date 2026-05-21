@@ -10,6 +10,8 @@ const flatToSharp = {
   Fb: "E",
 };
 
+var bpm = 120;
+
 const note_names = [
   "A",
   "A#",
@@ -38,14 +40,35 @@ const base_controls = `<div class="control">
 </select>
 </div>`;
 
-var instruments = [
-  {
+var tracks = {
+  "lead1": {
+    "id": "lead1",
+    "name": "Lead Synth",
     "type": "sawtooth",
     "detune": 15,
     "voices": 1,
-    "volume": -40
+    "volume": -40,
+    "notes": []
+  },
+  "bass": {
+    "id": "bass",
+    "name": "Bass Synth",
+    "type": "sawtooth",
+    "detune": 15,
+    "voices": 1,
+    "volume": -40,
+    "notes": []
+  },
+  "pad": {
+    "id": "pad",
+    "name": "Pad Synth",
+    "type": "sawtooth",
+    "detune": 15,
+    "voices": 1,
+    "volume": -40,
+    "notes": []
   }
-]
+}
 
 var melodyColumnCount = 64;
 const melodyRowCount = 49;
@@ -408,4 +431,75 @@ async function play_tone(frequency = 440, duration = 1000, volume=document.getEl
 
 function generate_instruments() {
   return
+}
+
+function selectInstrument(instrumentName) {
+  tracks[currentInstrument].notes = get_melody_notes();
+  currentInstrument = instrumentName;
+  reset_melody_sequencer();
+  // document.getElementById("controls").innerHTML = base_controls;
+
+  load_melody_notes(tracks[currentInstrument].notes);
+}
+
+function get_melody_notes() {
+  const sequencer = document.querySelector(".melody-sequencer");
+  const melodyColumnCount =
+    parseInt(
+      sequencer.style.getPropertyValue("--melody-column-count"),
+      10,
+    ) || 8;
+  const notes = [];
+  for (let j = 0; j < melodyColumnCount; j++) {
+    const checkedBox = sequencer.querySelector(
+      `input[name="melody-col-${j}"]:checked`,
+    );
+    if (checkedBox) {
+      const absoluteIndex = parseInt(melodyRowCount - 1 - checkedBox.value, 10);
+      const noteString = note_names[absoluteIndex%12];
+      const octave = 2 + Math.floor(absoluteIndex / 12);
+      notes.push(noteString + octave);
+    } else {
+      notes.push(null);
+    }
+  }
+  return notes;
+}
+
+function load_melody_notes(notes) {
+  const sequencer = document.querySelector(".melody-sequencer");
+  const melodyColumnCount =
+    parseInt(
+      sequencer.style.getPropertyValue("--melody-column-count"),
+      10,
+    ) || 8;
+  const melodyboxes = sequencer.querySelectorAll(".melodybox");
+  melodyboxes.forEach((melodybox) => {
+    melodybox.checked = false;
+    melodybox.wasChecked = false;
+  });
+  for (let j = 0; j < melodyColumnCount; j++) {
+    const note = notes[j];
+    if (!note) continue;
+    const octave = parseInt(note.slice(-1), 10);
+    const noteString = note.slice(0, -1);
+    const noteIndex = note_names.indexOf(noteString);
+    const absoluteIndex = noteIndex + (octave - 2) * 12;
+    const melodybox = sequencer.querySelector(
+      `input[name="melody-col-${j}"][value="${melodyRowCount - 1 - absoluteIndex}"]`,
+    );
+    if (melodybox) {
+      melodybox.checked = true;
+      melodybox.wasChecked = true;
+    }
+  }
+}
+
+function reset_melody_sequencer() {
+  const sequencer = document.querySelector(".melody-sequencer");
+  const melodyboxes = sequencer.querySelectorAll(".melodybox");
+  melodyboxes.forEach((box) => {
+    box.checked = false;
+    box.wasChecked = false;
+  });
 }

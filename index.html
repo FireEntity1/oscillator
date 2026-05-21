@@ -11,9 +11,11 @@
         <h1>oscillator</h1>
         <div class="layout-container">
     <div class="left-edge-panel" id="left-panel">
-        <div class="track active" data-instrument="lead1">Lead Synth</div>
-        <div class="track" data-instrument="bass">Bass Synth</div>
-        <div class="track" data-instrument="pad">Pad Synth</div>
+        <div class="track active" data-instrument="lead1" onclick="selectInstrument('lead1')">Lead Synth</div>
+        <div class="track" data-instrument="bass" onclick="selectInstrument('bass')">Bass Synth</div>
+        <div class="track" data-instrument="pad" onclick="selectInstrument('pad')">Pad Synth</div>
+        <label for="bpm" id="bpm-label">BPM</label>
+        <input type="number" id="bpm" min="30" max="400" value="120" />
     </div>
 
     <div class="left-panel">
