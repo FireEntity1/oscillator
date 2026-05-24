@@ -91,7 +91,7 @@ input[type="radio"] {
 
 .layout-container {
     display: grid;
-    grid-template-columns: 180px 180px minmax(0,1fr);
+    grid-template-columns: 200px 180px minmax(0,1fr);
     width: 100%;
     align-items: start;
     box-sizing: border-box;
@@ -101,8 +101,8 @@ input[type="radio"] {
 }
 
 .left-edge-panel {
-    display: flex;
-    align-items:flex-start;
+    /* display: flex; */
+    align-items:center;
     justify-content: flex-start;
     width: 200px;
     background-color: #1a181b;
@@ -238,6 +238,24 @@ select {
 #bpm-label {
     margin: 1em auto;
     margin-bottom: 0;
-    font-size: 1.2em;
+    font-size: 1.6em;
+    margin-right: 0.5em;
     color: #517664;
+}
+
+hr {
+    width: 80%;
+    border: none;
+    border-top: 1px solid #ccc;
+    margin: 2em auto;
+}
+
+header {
+    background-color: #1a181b;
+    color: white;
+    width: 90%;
+    padding: 1em 0;
+    margin-bottom: 1em;
+    justify-content: center;
+    display: flex;
 }

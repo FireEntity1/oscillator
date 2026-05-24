@@ -8,14 +8,19 @@
         <link href="https://fonts.googleapis.com/css2?family=Geo:ital@0;1&display=swap" rel="stylesheet">
     </head>
     <body>
-        <h1>oscillator</h1>
+        <div class="header">
+            <h1>oscillator</h1>
+        </div>
         <div class="layout-container">
     <div class="left-edge-panel" id="left-panel">
+        <label for="tracks" id="bpm-label">TRACKS</label>
         <div class="track active" data-instrument="lead1" onclick="selectInstrument('lead1')">Lead Synth</div>
         <div class="track" data-instrument="bass" onclick="selectInstrument('bass')">Bass Synth</div>
         <div class="track" data-instrument="pad" onclick="selectInstrument('pad')">Pad Synth</div>
+        <hr />
         <label for="bpm" id="bpm-label">BPM</label>
         <input type="number" id="bpm" min="30" max="400" value="120" />
+        <button onclick="play_all()" class="control play">PLAY</button>
     </div>
 
     <div class="left-panel">
@@ -47,7 +52,6 @@
 
     <div class="right-panel">
         <div id="melody-sequencer" class="melody-sequencer"></div>
-        <button onclick="play_all()" class="control play">PLAY</button>
     </div>
 </div>
     </body>
