@@ -10,7 +10,7 @@ const flatToSharp = {
   Fb: "E",
 };
 
-var bpm = 120;
+var bpm = 240;
 
 const note_names = [
   "A",
@@ -32,7 +32,7 @@ const base_controls = `<div class="control">
 <input type="range" id="voices" min="1" max="8" value="1" />
 <label for="voices">Voices</label>
 <div class="control">
-<select id="waveform">
+<select id="type">
 <option value="sine">Sine</option>
 <option value="sawtooth">Sawtooth</option>
 <option value="square">Square</option>
@@ -44,28 +44,34 @@ var tracks = {
   "lead1": {
     "id": "lead1",
     "name": "Lead Synth",
-    "type": "sawtooth",
-    "detune": 15,
-    "voices": 1,
-    "volume": -40,
+    "settings": {
+      "detune": 15,
+      "voices": 1,
+      "volume": -40,
+      "type": "sawtooth",
+    },
     "notes": []
   },
   "bass": {
     "id": "bass",
     "name": "Bass Synth",
-    "type": "sawtooth",
-    "detune": 15,
-    "voices": 1,
-    "volume": -40,
+    "settings": {
+      "detune": 15,
+      "voices": 1,
+      "volume": -40,
+      "type": "sawtooth",
+    },
     "notes": []
   },
   "pad": {
     "id": "pad",
     "name": "Pad Synth",
-    "type": "sawtooth",
-    "detune": 15,
-    "voices": 1,
-    "volume": -40,
+    "settings": {
+      "detune": 15,
+      "voices": 1,
+      "volume": -40,
+      "type": "sawtooth",
+    },
     "notes": []
   }
 }
@@ -182,6 +188,12 @@ window.addEventListener("DOMContentLoaded", () => {
       });
     }
   }
+  window.addEventListener("keydown", (event) => {
+    if (event.repeat) return;
+    if (event.key == " ") {
+      play_all();
+    }
+  });
 });
 
 function note_to_frequency(note) {
@@ -323,7 +335,7 @@ async function play_sequence() {
   }
 }
 
-async function play_melody(notes = null) {
+async function play_melody(notes = null, settings = null) {
   const melody_sequencer = document.querySelector(".melody-sequencer");
   if (!melody_sequencer) return;
   const melodyColumnCount =
@@ -339,7 +351,7 @@ async function play_melody(notes = null) {
       const note = notes[j];
       if (note) {
         const frequency = note_to_frequency(note);
-        await play_tone(frequency, beatDuration);
+        await play_tone(frequency, beatDuration, settings);
       } else {
         await new Promise((resolve) => setTimeout(resolve, beatDuration));
       }
@@ -358,33 +370,29 @@ async function play_melody(notes = null) {
       const octave = 2 + Math.floor(absoluteIndex / 12);
       const noteToPlay = noteString + octave;
 
-      await play_tone(note_to_frequency(noteToPlay), beatDuration);
+      await play_tone(note_to_frequency(noteToPlay), beatDuration, settings);
     } else {
       await new Promise((resolve) => setTimeout(resolve, beatDuration));
     }
   }
 }
 
-async function play_all() {
+async function play_all(position = 0) {
   tracks[currentInstrument].notes = get_melody_notes();
+  save_settings();
   var melodies = [];
   Object.values(tracks).forEach((track) => {
     if (track.notes && track.notes.length > 0) {
       melodies.push(track.notes);
+      play_melody(track.notes, settings=track.settings)
     }
   });
-  if (melodies.length > 0) {
-    for (const melody of melodies) {
-      play_melody(melody);
-      play_sequence();
-    }
-  } else {
-    play_sequence();
-  }
+  play_sequence();
 }
 
-async function play_tone(frequency = 440, duration = 1000, volume=document.getElementById("volume").value) {
-  var rawVolume = parseFloat(volume);
+async function play_tone(frequency = 440, duration = 1000, settings=null, volume=document.getElementById("volume").value) {
+  const useTrackVolume = settings && typeof settings.volume === "number";
+  const rawVolume = useTrackVolume ? settings.volume : parseFloat(volume);
   const context = audioCtx;
   const oscillator = context.createOscillator();
   const gain = context.createGain();
@@ -403,7 +411,7 @@ async function play_tone(frequency = 440, duration = 1000, volume=document.getEl
     return min + (max - min) * shaped;
   }
   const now = context.currentTime;
-  const volumeDb = sliderRawToDb(rawVolume, document.getElementById("volume"));
+  const volumeDb = sliderRawToDb(rawVolume, settings && settings.volume ? {min: -120, max: 0} : document.getElementById("volume"));
   gain.gain.setValueAtTime(dbToGain(volumeDb), now);
   const volume_slider = document.getElementById("volume");
   function onVolInput() {
@@ -415,14 +423,14 @@ async function play_tone(frequency = 440, duration = 1000, volume=document.getEl
   volume_slider.addEventListener("input", onVolInput);
   oscillator.connect(gain);
   gain.connect(context.destination);
-  const waveform = document.getElementById("waveform").value;
-  const detuneValue = parseFloat(document.getElementById("detune").value);
+  const type = settings ? settings.type : document.getElementById("type").value;
+  const detuneValue = parseFloat(settings ? settings.detune : document.getElementById("detune").value);
   var detunedOsc = [];
 
   if (detuneValue > 0) {
-    for (let i = 0; i < document.getElementById("voices").value; i++) {
+    for (let i = 0; i < (settings ? settings.voices : document.getElementById("voices").value); i++) {
       const detuneOsc = context.createOscillator();
-      detuneOsc.type = waveform;
+      detuneOsc.type = type;
       detuneOsc.frequency.value = frequency;
       detuneOsc.detune.value = detuneValue;
       detuneOsc.connect(gain);
@@ -431,7 +439,7 @@ async function play_tone(frequency = 440, duration = 1000, volume=document.getEl
     }
   }
 
-  oscillator.type = waveform;
+  oscillator.type = type;
   oscillator.frequency.value = frequency;
   await context.resume();
   oscillator.start();
@@ -459,11 +467,11 @@ function generate_instruments() {
 }
 
 function selectInstrument(instrumentName) {
-  tracks[currentInstrument].notes = get_melody_notes();
+  save_settings();
   currentInstrument = instrumentName;
   reset_melody_sequencer();
   // document.getElementById("controls").innerHTML = base_controls;
-
+  load_settings();
   load_melody_notes(tracks[currentInstrument].notes);
 }
 
@@ -527,4 +535,20 @@ function reset_melody_sequencer() {
     box.checked = false;
     box.wasChecked = false;
   });
+}
+
+function save_settings() {
+  const track = tracks[currentInstrument];
+  track.settings.detune = parseFloat(document.getElementById("detune").value);
+  track.settings.voices = parseInt(document.getElementById("voices").value, 10);
+  track.settings.volume = parseFloat(document.getElementById("volume").value);
+  track.settings.type = document.getElementById("type").value;
+}
+
+function load_settings() {
+  const track = tracks[currentInstrument];
+  document.getElementById("detune").value = track.settings.detune;
+  document.getElementById("voices").value = track.settings.voices;
+  document.getElementById("volume").value = track.settings.volume;
+  document.getElementById("type").value = track.settings.type;
 }
