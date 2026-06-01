@@ -26,6 +26,7 @@ const note_names = [
   "G",
   "G#",
 ];
+
 const base_controls = `<div class="control">
 <input type="range" id="detune" min="0" max="50" value="0" />
 <label for="detune">Detune</label>
@@ -39,6 +40,8 @@ const base_controls = `<div class="control">
 <option value="triangle">Triangle</option>
 </select>
 </div>`;
+
+var playing = false;
 
 var tracks = {
   "lead1": {
@@ -65,7 +68,7 @@ var tracks = {
   },
   "pad": {
     "id": "pad",
-    "name": "Pad Synth",
+    "name": "Harmony Synth",
     "settings": {
       "detune": 15,
       "voices": 1,
@@ -74,6 +77,13 @@ var tracks = {
     },
     "notes": []
   }
+}
+
+var chordsettings = {
+  "detune": 0,
+  "voices": 1,
+  "volume": -40,
+  "type": "sawtooth",
 }
 
 var melodyColumnCount = 64;
@@ -302,7 +312,7 @@ async function play_chord(to_play = null) {
   if (!parsed || parsed.length === 0) return;
   const promises = parsed.map((note) => {
     const frequency = note_to_frequency(note);
-    return play_tone(frequency);
+    return play_tone(frequency, 60000/bpm*4, chordsettings);
   });
   await Promise.all(promises);
 }
@@ -333,6 +343,7 @@ async function play_sequence() {
     if (chord && chord.trim().length > 0) await play_chord(chord.trim());
     else await new Promise((resolve) => setTimeout(resolve, 60000/bpm));
   }
+  playing = false
 }
 
 async function play_melody(notes = null, settings = null) {
@@ -369,15 +380,21 @@ async function play_melody(notes = null, settings = null) {
       const noteString = note_names[absoluteIndex%12];
       const octave = 2 + Math.floor(absoluteIndex / 12);
       const noteToPlay = noteString + octave;
-
+      
       await play_tone(note_to_frequency(noteToPlay), beatDuration, settings);
     } else {
       await new Promise((resolve) => setTimeout(resolve, beatDuration));
     }
   }
+  playing = false;
 }
 
 async function play_all(position = 0) {
+  if (playing) {
+    playing = false;
+    return;
+  };
+  playing = true;
   tracks[currentInstrument].notes = get_melody_notes();
   save_settings();
   var melodies = [];
@@ -391,6 +408,7 @@ async function play_all(position = 0) {
 }
 
 async function play_tone(frequency = 440, duration = 1000, settings=null, volume=document.getElementById("volume").value) {
+  if (!playing) return;
   const useTrackVolume = settings && typeof settings.volume === "number";
   const rawVolume = useTrackVolume ? settings.volume : parseFloat(volume);
   const context = audioCtx;
