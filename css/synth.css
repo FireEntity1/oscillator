@@ -119,6 +119,18 @@ input[type="radio"] {
     align-items: center;
     flex-direction: column;
     min-width:10em;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.left-panel h2 {
+    margin: 0.75em 0 0;
+    font-size: 1.4em;
+    color: #1a181b;
+}
+
+.left-panel .control {
+    margin: 1em;
 }
 
 .track {

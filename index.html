@@ -24,6 +24,7 @@
     </div>
 
     <div class="left-panel">
+        <h2>Track</h2>
         <div class="control">
             <input type="range" id="detune" min="0" max="50" value="0" />
             <label for="detune">Detune</label>
@@ -47,6 +48,29 @@
         <div>
             <input type="checkbox" id="wrap" />
             <label for="wrap">Wrap</label>
+        </div>
+
+        <hr />
+
+        <h2>Chords</h2>
+        <div class="control">
+            <input type="range" id="chord-detune" min="0" max="50" value="0" />
+            <label for="chord-detune">Detune</label>
+            <input type="range" id="chord-voices" min="1" max="8" value="1" />
+            <label for="chord-voices">Voices</label>
+            <div class="control">
+                    <select id="chord-type">
+                        <option value="sawtooth">Sawtooth</option>
+                        <option value="sine">Sine</option>
+                        <option value="square">Square</option>
+                        <option value="triangle">Triangle</option>
+                    </select>
+                </div>
+        </div>
+
+        <div class="control">
+            <input type="range" id="chord-volume" min="-120" max="0" value="-40" />
+            <label for="chord-volume">Volume</label>
         </div>
     </div>
 

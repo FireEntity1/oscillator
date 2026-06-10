@@ -10,7 +10,7 @@ const flatToSharp = {
   Fb: "E",
 };
 
-var bpm = 240;
+var bpm = 120;
 
 const note_names = [
   "A",
@@ -42,6 +42,8 @@ const base_controls = `<div class="control">
 </div>`;
 
 var playing = false;
+let activePlaybackSession = null;
+let playbackSessionId = 0;
 
 var tracks = {
   "lead1": {
@@ -73,19 +75,23 @@ var tracks = {
 }
 }
 
-var chordsettings = {
-  "detune": 0,
-  "voices": 1,
-  "volume": -40,
-  "type": "sawtooth",
-}
+var chords = {
+  "settings": {
+    "detune": 0,
+    "voices": 1,
+    "volume": -40,
+    "type": "sawtooth",
+  },
+  "progression": [],
+};
 
 var melodyColumnCount = 64;
+const melodyColumnsPerSection = 4;
 const melodyRowCount = 49;
 
 let currentInstrument = "lead1";
 
-var wrap = true;
+var wrap = false;
 
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
@@ -143,7 +149,7 @@ window.addEventListener("DOMContentLoaded", () => {
   cornerCell.textContent = "Chords";
   melody_sequencer.appendChild(cornerCell);
 
-  const numberOfChords = melodyColumnCount/4;
+  const numberOfChords = melodyColumnCount / melodyColumnsPerSection;
   for (let i = 0; i < numberOfChords; i++) {
     const chordCell = document.createElement("div");
     chordCell.classList.add("chord-cell");
@@ -151,6 +157,7 @@ window.addEventListener("DOMContentLoaded", () => {
     chordbox.type = "text";
     chordbox.classList.add("chordbox");
     chordbox.id = `chord-cell-${i}`;
+    chordbox.addEventListener("input", saveChordProgression);
     chordCell.appendChild(chordbox);
     melody_sequencer.appendChild(chordCell);
   }
@@ -171,7 +178,9 @@ window.addEventListener("DOMContentLoaded", () => {
       if (!noteString.includes("#") && !noteString.includes("b")) {
         cell.classList.add("natural-row");
       }
-      if (j % 4 === 3) cell.classList.add("melody-divider");
+      if (j % melodyColumnsPerSection === melodyColumnsPerSection - 1) {
+        cell.classList.add("melody-divider");
+      }
       const melodybox = document.createElement("input");
       melodybox.type = "radio";
       melodybox.name = `melody-col-${j}`; // ts beat
@@ -198,6 +207,13 @@ window.addEventListener("DOMContentLoaded", () => {
       play_all();
     }
   });
+
+setupControlBindings();
+syncBpmFromControls();
+load_settings();
+loadChordSettings();
+load_melody_notes(tracks[currentInstrument].notes);
+saveChordProgression();
 
 
 function note_to_frequency(note) {
@@ -298,15 +314,16 @@ async function play() {
   }
 }
 
-async function play_chord(to_play = null) {
+async function play_chord(to_play = null, session = activePlaybackSession) {
   let chord;
   if (typeof to_play === "string" && to_play.length > 0) chord = to_play;
-  else chord = document.getElementById("chord").value;
+  else chord = document.getElementById("chord")?.value || "";
   const parsed = parse_chord_name(chord);
   if (!parsed || parsed.length === 0) return;
+  const chordDuration = 60000 / syncBpmFromControls();
   const promises = parsed.map((note) => {
     const frequency = note_to_frequency(note);
-    return play_tone(frequency, 60000/bpm*4, chordsettings);
+    return play_tone(frequency, chordDuration, chords.settings, undefined, session);
   });
   await Promise.all(promises);
 }
@@ -323,23 +340,217 @@ async function play_select() {
   }
 }
 
-async function play_sequence() {
-  const sequence = [];
-  const seqEl = document.querySelector(".melody-sequencer");
-  const chordBoxes = seqEl ? seqEl.querySelectorAll(".chordbox") : [];
-  console.log("play_sequence: found", chordBoxes.length, "boxes");
-  chordBoxes.forEach((el, i) =>
-    console.log("box", i, el.tagName, "value=", el.value),
-  );
-  for (const input of chordBoxes) sequence.push(input.value);
-  for (const chord of sequence) {
-    console.log("sequence chord ->", chord);
-    if (chord && chord.trim().length > 0) await play_chord(chord.trim());
-    else await new Promise((resolve) => setTimeout(resolve, 60000/bpm));
+async function play_sequence(session = activePlaybackSession) {
+  saveChordProgression();
+  await play_chord_sequence(chords.progression, chords.settings, syncBpmFromControls(), session);
+}
+
+async function play_chord_sequence(
+  progression = [],
+  settings = chords.settings,
+  tempo = bpm,
+  session = activePlaybackSession,
+) {
+  const chordDuration = 60000 / tempo;
+  for (const chord of progression) {
+    if (session && !isPlaybackSessionActive(session)) return;
+    if (chord && chord.trim().length > 0) {
+      await play_chord_with_settings(chord.trim(), settings, chordDuration, session);
+    } else {
+      await waitForPlayback(chordDuration, session);
+    }
   }
 }
 
-async function play_melody(notes = null, settings = null) {
+async function play_chord_with_settings(chord, settings, duration, session = activePlaybackSession) {
+  const parsed = parse_chord_name(chord);
+  if (!parsed || parsed.length === 0) return;
+  const promises = parsed.map((note) => {
+    const frequency = note_to_frequency(note);
+    return play_tone(frequency, duration, settings, undefined, session);
+  });
+  await Promise.all(promises);
+}
+
+function cloneSettings(settings) {
+  return {
+    detune: Number(settings.detune),
+    voices: Number(settings.voices),
+    volume: Number(settings.volume),
+    type: settings.type,
+  };
+}
+
+function cloneNotes(notes) {
+  return notes.slice();
+}
+
+function createPlaybackSession() {
+  return {
+    id: ++playbackSessionId,
+    active: true,
+    waits: new Map(),
+    voices: new Set(),
+  };
+}
+
+function isPlaybackSessionActive(session) {
+  return session && session.active && activePlaybackSession === session;
+}
+
+function setPlayButtonLabel(label) {
+  const playButton = document.querySelector(".play");
+  if (playButton) playButton.textContent = label;
+}
+
+function stopVoice(voice) {
+  if (!voice || voice.stopped) return;
+  voice.stopped = true;
+
+  voice.oscillators.forEach((oscillator) => {
+    try {
+      oscillator.stop();
+    } catch (e) {}
+    try {
+      oscillator.disconnect();
+    } catch (e) {}
+  });
+
+  try {
+    voice.gain.disconnect();
+  } catch (e) {}
+}
+
+function stopPlaybackSession(session) {
+  if (!session || !session.active) return;
+  session.active = false;
+
+  session.waits.forEach((resolve, timeout) => {
+    clearTimeout(timeout);
+    resolve(false);
+  });
+  session.waits.clear();
+
+  session.voices.forEach(stopVoice);
+  session.voices.clear();
+}
+
+function stopPlayback() {
+  stopPlaybackSession(activePlaybackSession);
+  activePlaybackSession = null;
+  playing = false;
+  setPlayButtonLabel("PLAY");
+}
+
+function waitForPlayback(duration, session) {
+  if (!session) {
+    return new Promise((resolve) => setTimeout(() => resolve(true), duration));
+  }
+  if (!isPlaybackSessionActive(session)) return Promise.resolve(false);
+
+  return new Promise((resolve) => {
+    const timeout = setTimeout(() => {
+      session.waits.delete(timeout);
+      resolve(isPlaybackSessionActive(session));
+    }, duration);
+    session.waits.set(timeout, resolve);
+  });
+}
+
+function syncBpmFromControls() {
+  const bpmInput = document.getElementById("bpm");
+  if (!bpmInput) return bpm;
+  const parsed = parseInt(bpmInput.value, 10);
+  if (Number.isFinite(parsed)) {
+    const min = parseInt(bpmInput.min, 10) || 30;
+    const max = parseInt(bpmInput.max, 10) || 400;
+    bpm = Math.max(min, Math.min(max, parsed));
+  }
+  return bpm;
+}
+
+function getTrackSettingsFromControls() {
+  return {
+    detune: parseFloat(document.getElementById("detune").value),
+    voices: parseInt(document.getElementById("voices").value, 10),
+    volume: parseFloat(document.getElementById("volume").value),
+    type: document.getElementById("type").value,
+  };
+}
+
+function applyTrackSettingsToControls(settings) {
+  document.getElementById("detune").value = settings.detune;
+  document.getElementById("voices").value = settings.voices;
+  document.getElementById("volume").value = settings.volume;
+  document.getElementById("type").value = settings.type;
+}
+
+function getChordSettingsFromControls() {
+  return {
+    detune: parseFloat(document.getElementById("chord-detune").value),
+    voices: parseInt(document.getElementById("chord-voices").value, 10),
+    volume: parseFloat(document.getElementById("chord-volume").value),
+    type: document.getElementById("chord-type").value,
+  };
+}
+
+function applyChordSettingsToControls(settings) {
+  document.getElementById("chord-detune").value = settings.detune;
+  document.getElementById("chord-voices").value = settings.voices;
+  document.getElementById("chord-volume").value = settings.volume;
+  document.getElementById("chord-type").value = settings.type;
+}
+
+function saveChordSettings() {
+  chords.settings = getChordSettingsFromControls();
+}
+
+function loadChordSettings() {
+  applyChordSettingsToControls(chords.settings);
+}
+
+function setupControlBindings() {
+  ["detune", "voices", "volume", "type"].forEach((id) => {
+    const control = document.getElementById(id);
+    if (!control) return;
+    control.addEventListener("input", save_settings);
+    control.addEventListener("change", save_settings);
+  });
+
+  ["chord-detune", "chord-voices", "chord-volume", "chord-type"].forEach((id) => {
+    const control = document.getElementById(id);
+    if (!control) return;
+    control.addEventListener("input", saveChordSettings);
+    control.addEventListener("change", saveChordSettings);
+  });
+
+  const bpmInput = document.getElementById("bpm");
+  if (bpmInput) {
+    bpmInput.addEventListener("input", syncBpmFromControls);
+    bpmInput.addEventListener("change", syncBpmFromControls);
+  }
+}
+
+function getChordProgression() {
+  const seqEl = document.querySelector(".melody-sequencer");
+  const chordBoxes = seqEl ? seqEl.querySelectorAll(".chordbox") : [];
+  return Array.from(chordBoxes, (input) => input.value);
+}
+
+function saveChordProgression() {
+  chords.progression = getChordProgression();
+}
+
+function saveCurrentInstrumentState() {
+  if (!tracks[currentInstrument]) return;
+  tracks[currentInstrument].notes = get_melody_notes();
+  save_settings();
+  saveChordSettings();
+  saveChordProgression();
+  syncBpmFromControls();
+}
+
+async function play_melody(notes = null, settings = null, tempo = bpm, session = activePlaybackSession) {
   const melody_sequencer = document.querySelector(".melody-sequencer");
   if (!melody_sequencer) return;
   const melodyColumnCount =
@@ -348,21 +559,24 @@ async function play_melody(notes = null, settings = null) {
       10,
     ) || 8;
 
-  const beatDuration = 60000 / bpm;
+  const beatDuration = 60000 / tempo;
+  const stepDuration = beatDuration / melodyColumnsPerSection;
 
   if (notes && notes.length > 0) {
     for (let j = 0; j < melodyColumnCount; j++) {
+      if (session && !isPlaybackSessionActive(session)) return;
       const note = notes[j];
       if (note) {
         const frequency = note_to_frequency(note);
-        await play_tone(frequency, beatDuration, settings);
+        await play_tone(frequency, stepDuration, settings, undefined, session);
       } else {
-        await new Promise((resolve) => setTimeout(resolve, beatDuration));
+        await waitForPlayback(stepDuration, session);
       }
     }
     return;
   }
   for (let j = 0; j < melodyColumnCount; j++) {
+    if (session && !isPlaybackSessionActive(session)) return;
     const checkedBox = melody_sequencer.querySelector(
       `input[name="melody-col-${j}"]:checked`,
     );
@@ -374,42 +588,67 @@ async function play_melody(notes = null, settings = null) {
       const octave = 2 + Math.floor(absoluteIndex / 12);
       const noteToPlay = noteString + octave;
       
-      await play_tone(note_to_frequency(noteToPlay), beatDuration, settings);
+      await play_tone(note_to_frequency(noteToPlay), stepDuration, settings, undefined, session);
     } else {
-      await new Promise((resolve) => setTimeout(resolve, beatDuration));
+      await waitForPlayback(stepDuration, session);
     }
   }
 }
 
 async function play_all(position = 0) {
   if (playing) {
-    playing = false;
+    stopPlayback();
     return;
   }
 
+  const session = createPlaybackSession();
+  activePlaybackSession = session;
   playing = true;
-  tracks[currentInstrument].notes = get_melody_notes();
-  save_settings();
+  setPlayButtonLabel("STOP");
+  saveCurrentInstrumentState();
+
+  const playbackBpm = syncBpmFromControls();
+  const trackSnapshots = Object.values(tracks).map((track) => ({
+    notes: cloneNotes(track.notes),
+    settings: cloneSettings(track.settings),
+  }));
+  const chordProgression = chords.progression.slice();
+  const chordSettings = cloneSettings(chords.settings);
 
   const playbackTasks = [];
 
-  Object.values(tracks).forEach((track) => {
+  trackSnapshots.forEach((track) => {
     if (track.notes && track.notes.some((note) => note)) {
-      playbackTasks.push(play_melody(track.notes, track.settings));
+      playbackTasks.push(play_melody(track.notes, track.settings, playbackBpm, session));
     }
   });
 
-  playbackTasks.push(play_sequence());
+  if (chordProgression.some((chord) => chord && chord.trim())) {
+    playbackTasks.push(play_chord_sequence(chordProgression, chordSettings, playbackBpm, session));
+  }
 
-  await Promise.all(playbackTasks);
-
-  playing = false;
+  try {
+    await Promise.all(playbackTasks);
+  } finally {
+    stopPlaybackSession(session);
+    if (activePlaybackSession === session) {
+      activePlaybackSession = null;
+      playing = false;
+      setPlayButtonLabel("PLAY");
+    }
+  }
 }
 
-async function play_tone(frequency = 440, duration = 1000, settings=null, volume=document.getElementById("volume").value) {
-  if (!playing) return;
-  const useTrackVolume = settings && typeof settings.volume === "number";
-  const rawVolume = useTrackVolume ? settings.volume : parseFloat(volume);
+async function play_tone(
+  frequency = 440,
+  duration = 1000,
+  settings = null,
+  volume = document.getElementById("volume").value,
+  session = activePlaybackSession,
+) {
+  if (session && !isPlaybackSessionActive(session)) return false;
+  const useTrackVolume = settings && Number.isFinite(Number(settings.volume));
+  const rawVolume = useTrackVolume ? Number(settings.volume) : parseFloat(volume);
   const context = audioCtx;
   const oscillator = context.createOscillator();
   const gain = context.createGain();
@@ -428,7 +667,7 @@ async function play_tone(frequency = 440, duration = 1000, settings=null, volume
     return min + (max - min) * shaped;
   }
   const now = context.currentTime;
-  const volumeDb = sliderRawToDb(rawVolume, settings && settings.volume ? {min: -120, max: 0} : document.getElementById("volume"));
+  const volumeDb = sliderRawToDb(rawVolume, settings ? {min: -120, max: 0} : document.getElementById("volume"));
   gain.gain.setValueAtTime(dbToGain(volumeDb), now);
   const volume_slider = document.getElementById("volume");
   function onVolInput() {
@@ -440,46 +679,47 @@ async function play_tone(frequency = 440, duration = 1000, settings=null, volume
   if (!settings) {
     volume_slider.addEventListener("input", onVolInput);
   }
-  oscillator.connect(gain);
+
+  const voice = {
+    oscillators: [oscillator],
+    gain,
+    stopped: false,
+  };
+
+  if (session) session.voices.add(voice);
+
   gain.connect(context.destination);
   const type = settings ? settings.type : document.getElementById("type").value;
   const detuneValue = parseFloat(settings ? settings.detune : document.getElementById("detune").value);
-  var detunedOsc = [];
-
-  if (detuneValue > 0) {
-    for (let i = 0; i < (settings ? settings.voices : document.getElementById("voices").value); i++) {
-      const detuneOsc = context.createOscillator();
-      detuneOsc.type = type;
-      detuneOsc.frequency.value = frequency;
-      detuneOsc.detune.value = detuneValue;
-      detuneOsc.connect(gain);
-      detuneOsc.start();
-      detunedOsc.push(detuneOsc);
-    }
-  }
+  const voiceCount = parseInt(settings ? settings.voices : document.getElementById("voices").value, 10) || 1;
 
   oscillator.type = type;
   oscillator.frequency.value = frequency;
-  await context.resume();
-  oscillator.start();
-  await new Promise((resolve) => setTimeout(resolve, duration));
-  if (detunedOsc.length > 0) {
-    for (const osc of detunedOsc) {
-      osc.stop();
-      try {
-        osc.disconnect();
-      } catch (e) {}
+  oscillator.connect(gain);
+
+  try {
+    if (detuneValue > 0) {
+      for (let i = 0; i < voiceCount; i++) {
+        const detuneOsc = context.createOscillator();
+        detuneOsc.type = type;
+        detuneOsc.frequency.value = frequency;
+        detuneOsc.detune.value = detuneValue;
+        detuneOsc.connect(gain);
+        voice.oscillators.push(detuneOsc);
+      }
     }
-  }
-  oscillator.stop();
-  try {
-    oscillator.disconnect();
-  } catch (e) {}
-  try {
-    gain.disconnect();
-  } catch (e) {}
-  if (!settings) {
-    volume_slider.removeEventListener("input", onVolInput);
+
+    await context.resume();
+    if (session && !isPlaybackSessionActive(session)) return false;
+
+    voice.oscillators.forEach((osc) => osc.start());
+    return await waitForPlayback(duration, session);
+  } finally {
+    stopVoice(voice);
+    if (session) session.voices.delete(voice);
+    if (!settings) {
+      volume_slider.removeEventListener("input", onVolInput);
+    }
   }
 }
 
@@ -488,8 +728,9 @@ function generate_instruments() {
 }
 
 function selectInstrument(instrumentName) {
-  tracks[currentInstrument].notes = get_melody_notes();
-  save_settings();
+  if (!tracks[instrumentName]) return;
+
+  saveCurrentInstrumentState();
 
   currentInstrument = instrumentName;
 
@@ -566,16 +807,12 @@ function reset_melody_sequencer() {
 
 function save_settings() {
   const track = tracks[currentInstrument];
-  track.settings.detune = parseFloat(document.getElementById("detune").value);
-  track.settings.voices = parseInt(document.getElementById("voices").value, 10);
-  track.settings.volume = parseFloat(document.getElementById("volume").value);
-  track.settings.type = document.getElementById("type").value;
+  if (!track) return;
+  track.settings = getTrackSettingsFromControls();
 }
 
 function load_settings() {
   const track = tracks[currentInstrument];
-  document.getElementById("detune").value = track.settings.detune;
-  document.getElementById("voices").value = track.settings.voices;
-  document.getElementById("volume").value = track.settings.volume;
-  document.getElementById("type").value = track.settings.type;
+  if (!track) return;
+  applyTrackSettingsToControls(track.settings);
 }
