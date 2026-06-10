@@ -7,6 +7,7 @@ body {
     font-family: "Geo", sans-serif;
     font-weight: 400;
     font-style: normal;
+    background-color: #d6e5e3;
 }
 body {
     display: flex;
@@ -92,6 +93,7 @@ input[type="radio"] {
     display: grid;
     grid-template-columns: 200px 180px minmax(0,1fr);
     width: 100%;
+    flex: 1;
     align-items: start;
     box-sizing: border-box;
     align-items: start;
@@ -107,13 +109,13 @@ input[type="radio"] {
     background-color: #1a181b;
     flex-direction: column;
     padding: 1em;
-    height: 90%;
+    height: 100%;
     box-sizing: border-box;
 }
 
 .left-panel {
     background-color: #D6E5E3;
-    height: 90%;
+    height: 100%;
     display: flex;
     align-items: center;
     flex-direction: column;
