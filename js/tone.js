@@ -45,38 +45,32 @@ var playing = false;
 
 var tracks = {
   "lead1": {
-    "id": "lead1",
-    "name": "Lead Synth",
     "settings": {
       "detune": 15,
-      "voices": 1,
+      "voices": 2,
       "volume": -40,
       "type": "sawtooth",
     },
     "notes": []
+},
+"bass": {
+  "settings": {
+    "detune": 0,
+    "voices": 1,
+    "volume": -35,
+    "type": "square",
   },
-  "bass": {
-    "id": "bass",
-    "name": "Bass Synth",
-    "settings": {
-      "detune": 15,
-      "voices": 1,
-      "volume": -40,
-      "type": "sawtooth",
-    },
-    "notes": []
+  "notes": []
+},
+"pad": {
+  "settings": {
+    "detune": 8,
+    "voices": 4,
+    "volume": -50,
+    "type": "triangle",
   },
-  "pad": {
-    "id": "pad",
-    "name": "Harmony Synth",
-    "settings": {
-      "detune": 15,
-      "voices": 1,
-      "volume": -40,
-      "type": "sawtooth",
-    },
-    "notes": []
-  }
+  "notes": []
+}
 }
 
 var chordsettings = {
@@ -122,14 +116,14 @@ window.addEventListener("DOMContentLoaded", () => {
   //   }
   // }
 
-  const tracks = document.querySelectorAll(".track");
-  tracks.forEach((track) => {
-    track.addEventListener("click", () => {
-      tracks.forEach((t) => t.classList.remove("active"));
-      track.classList.add("active");
-      currentInstrument = track.dataset.instrument;
-      console.log("Selected instrument:", currentInstrument);
-    });
+  // const tracks = document.querySelectorAll(".track");
+  // tracks.forEach((track) => {
+  //   track.addEventListener("click", () => {
+  //     tracks.forEach((t) => t.classList.remove("active"));
+  //     track.classList.add("active");
+  //     currentInstrument = track.dataset.instrument;
+  //     console.log("Selected instrument:", currentInstrument);
+  //   });
   });
 
   const melody_sequencer = document.querySelector(".melody-sequencer");
@@ -204,7 +198,7 @@ window.addEventListener("DOMContentLoaded", () => {
       play_all();
     }
   });
-});
+
 
 function note_to_frequency(note) {
   var parsed = 0;
@@ -343,7 +337,6 @@ async function play_sequence() {
     if (chord && chord.trim().length > 0) await play_chord(chord.trim());
     else await new Promise((resolve) => setTimeout(resolve, 60000/bpm));
   }
-  playing = false
 }
 
 async function play_melody(notes = null, settings = null) {
@@ -386,25 +379,31 @@ async function play_melody(notes = null, settings = null) {
       await new Promise((resolve) => setTimeout(resolve, beatDuration));
     }
   }
-  playing = false;
 }
 
 async function play_all(position = 0) {
   if (playing) {
     playing = false;
     return;
-  };
+  }
+
   playing = true;
   tracks[currentInstrument].notes = get_melody_notes();
   save_settings();
-  var melodies = [];
+
+  const playbackTasks = [];
+
   Object.values(tracks).forEach((track) => {
-    if (track.notes && track.notes.length > 0) {
-      melodies.push(track.notes);
-      play_melody(track.notes, settings=track.settings)
+    if (track.notes && track.notes.some((note) => note)) {
+      playbackTasks.push(play_melody(track.notes, track.settings));
     }
   });
-  play_sequence();
+
+  playbackTasks.push(play_sequence());
+
+  await Promise.all(playbackTasks);
+
+  playing = false;
 }
 
 async function play_tone(frequency = 440, duration = 1000, settings=null, volume=document.getElementById("volume").value) {
@@ -438,7 +437,9 @@ async function play_tone(frequency = 440, duration = 1000, settings=null, volume
     gain.gain.cancelScheduledValues(context.currentTime);
     gain.gain.setTargetAtTime(dbToGain(db), context.currentTime, 0.02);
   }
-  volume_slider.addEventListener("input", onVolInput);
+  if (!settings) {
+    volume_slider.addEventListener("input", onVolInput);
+  }
   oscillator.connect(gain);
   gain.connect(context.destination);
   const type = settings ? settings.type : document.getElementById("type").value;
@@ -477,7 +478,9 @@ async function play_tone(frequency = 440, duration = 1000, settings=null, volume
   try {
     gain.disconnect();
   } catch (e) {}
-  volume_slider.removeEventListener("input", onVolInput);
+  if (!settings) {
+    volume_slider.removeEventListener("input", onVolInput);
+  }
 }
 
 function generate_instruments() {
@@ -485,10 +488,16 @@ function generate_instruments() {
 }
 
 function selectInstrument(instrumentName) {
+  tracks[currentInstrument].notes = get_melody_notes();
   save_settings();
+
   currentInstrument = instrumentName;
+
+  document.querySelectorAll(".track").forEach((track) => {
+    track.classList.toggle("active", track.dataset.instrument === instrumentName);
+  });
+
   reset_melody_sequencer();
-  // document.getElementById("controls").innerHTML = base_controls;
   load_settings();
   load_melody_notes(tracks[currentInstrument].notes);
 }
